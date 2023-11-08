@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>AR-christmas</title>
+		<style>
+			body {
+				margin: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="myCanvas"></canvas>
+		<script type="importmap">
+			{
+				"imports": 
+				{
+					"three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+					"three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+				}
+			}
+		</script>
+		<script type="module">
+			import * as THREE from "three";
+			import { ARButton } from "three/addons/webxr/ARButton.js";
+
+			// シーンの作成
+			const scene = new THREE.Scene();
+
+			// カメラの作成
+			const camera = new THREE.PerspectiveCamera(
+				80,
+				window.innerWidth / window.innerHeight,
+				0.1,
+				1000
+			);
+
+			// レンダラーの準備
+			const renderer = new THREE.WebGLRenderer({ canvas: document.querySelector("#myCanvas"), antialias: true, alpha: true});
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.xr.enabled = true;
+			document.body.appendChild(renderer.domElement);
+
+			// ライトの作成
+			const light = new THREE.DirectionalLight("#ffffff", 1);
+			light.position.set(0, 10, 10);
+			scene.add(light);
+
+			// 表示テスト
+			const geometry = new THREE.BoxGeometry();
+			const material = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+			const box = new THREE.Mesh(geometry, material);
+			box.position.z = -5;
+			scene.add(box);
+
+			// AR表示用のボタンを追加
+			document.body.appendChild(ARButton.createButton(renderer));
+
+			// アニメーションループの開始
+			function animate() {
+				box.rotation.x += 0.01;
+				box.rotation.y += 0.01;
+				renderer.render(scene, camera);
+			}
+			renderer.setAnimationLoop(animate);
+
+			// ウインドウのリサイズ検知
+			window.addEventListener("resize", onResize);
+			// リサイズ処理
+			function onResize() {
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+
+				// カメラのアスペクト比を正す
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+			}
+		</script>
+	</body>
+</html>
