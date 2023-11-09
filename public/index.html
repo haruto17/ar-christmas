@@ -23,11 +23,14 @@
 		<script type="module">
 			import * as THREE from "three";
 			import { ARButton } from "three/addons/webxr/ARButton.js";
+			import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+			import { FontLoader } from "three/addons/loaders/FontLoader.js";
+			import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 
 			// シーンの作成
 			const scene = new THREE.Scene();
 
-			// カメラの作成
+			// カメラの作成i
 			const camera = new THREE.PerspectiveCamera(
 				80,
 				window.innerWidth / window.innerHeight,
@@ -42,26 +45,69 @@
 			renderer.xr.enabled = true;
 			document.body.appendChild(renderer.domElement);
 
-			// ライトの作成
-			const light = new THREE.DirectionalLight("#ffffff", 1);
-			light.position.set(0, 10, 10);
-			scene.add(light);
+			// ライト(平行光源)の作成
+			const direction_light = new THREE.DirectionalLight(0xFFFFFF, 1);
+			direction_light.position.set(0, 10, 10);
+			scene.add(direction_light);
 
-			// 表示テスト
-			const geometry = new THREE.BoxGeometry();
-			const material = new THREE.MeshPhongMaterial({ color: 0xff0000 });
-			const box = new THREE.Mesh(geometry, material);
-			box.position.z = -5;
-			scene.add(box);
+			// ライト(スポットライト光源)の作成
+			const spot_light = new THREE.SpotLight(0xFFFFFF, 10, 30, Math.PI / 6, 10, 0.3);
+			spot_light.position.set(0, 5, -10);
+			scene.add(spot_light);
+			// ライトヘルパーの作成
+			//const lighthelper = new THREE.SpotLightHelper(spot_light);
+			//scene.add(lighthelper);
+
+
+			// 3Dモデルを読み込むローダー
+			const model_loader = new GLTFLoader();
+			// モデルの読み込み
+			const tree = await model_loader.loadAsync("./asset/model/tree.glb");
+			tree.scene.scale.set(0.5, 0.5, 0.5);	// モデルの縮小
+			tree.scene.position.set(0, -5, -10);	// モデルの位置を設定
+			scene.add(tree.scene);
+
+			// フォントを読み込むローダー
+			const font_loader = new FontLoader();
+			// フォントの読み込み
+			const font = await font_loader.loadAsync("./asset/font/MisakiGothic2nd_Regular.json");
 
 			// AR表示用のボタンを追加
 			document.body.appendChild(ARButton.createButton(renderer));
 
+			// 残り日数の更新
+			function updateDate() {
+				const targetDate = new Date(2023, 11, 25);
+				const nowDate = new Date();
+				const diff = targetDate.getTime() - nowDate.getTime();
+				const countDown = Math.floor(diff / (1000 * 60 * 60 * 24));
+				const textMesh = new THREE.Mesh(
+					new TextGeometry(
+						"クリスマスまであと" + countDown.toString() + "日",
+						{
+							font: font,
+							size: 8,
+							height: 1,
+						}
+					),
+					new THREE.MeshBasicMaterial({
+						color: "red",
+						transparent: true,
+					})
+				);
+				textMesh.geometry.center();
+				textMesh.scale.set(0.1, 0.1, 0.1);
+				textMesh.position.set(0, 6, -10);
+				scene.add(textMesh);
+			}
+
+			setInterval(updateDate, 3000);
+
 			// アニメーションループの開始
 			function animate() {
-				box.rotation.x += 0.01;
-				box.rotation.y += 0.01;
 				renderer.render(scene, camera);
+				//lighthelper.update();
+				tree.scene.rotation.y += 0.01;
 			}
 			renderer.setAnimationLoop(animate);
 
